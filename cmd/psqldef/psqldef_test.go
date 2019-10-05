@@ -278,7 +278,8 @@ func TestPsqldefDataTypes(t *testing.T) {
 		  c_serial serial,
 		  c_text text,
 		  c_uuid uuid,
-		  c_varchar_40 varchar(40)
+		  c_varchar_40 varchar(40),
+TODO
 		);
 		`,
 	)
@@ -311,13 +312,15 @@ func TestPsqldefExport(t *testing.T) {
 	assertEquals(t, out, "-- No table exists --\n")
 
 	mustExecute("psql", "-Upostgres", "psqldef_test", "-c", stripHeredoc(`
+		CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy');
 		CREATE TABLE users (
 		    id bigint NOT NULL PRIMARY KEY,
 		    age int,
 		    c_char_1 char,
 		    c_char_10 char(10),
 		    c_varchar_10 varchar(10),
-		    c_varchar_unlimited varchar
+		    c_varchar_unlimited varchar,
+		    current_mood mood
 		);`,
 	))
 	out = assertedExecute(t, "psqldef", "-Upostgres", "psqldef_test", "--export")
@@ -329,7 +332,8 @@ func TestPsqldefExport(t *testing.T) {
 		    c_char_1 character(1),
 		    c_char_10 character(10),
 		    c_varchar_10 character varying(10),
-		    c_varchar_unlimited character varying
+		    c_varchar_unlimited character varying,
+		    current_mood mood
 		);
 		ALTER TABLE ONLY users
 		    ADD CONSTRAINT users_pkey PRIMARY KEY (id);

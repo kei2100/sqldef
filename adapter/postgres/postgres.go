@@ -148,7 +148,8 @@ func (c *column) GetDataType() string {
 }
 
 func (d *PostgresDatabase) getColumns(table string) ([]column, error) {
-	query := `SELECT column_name, column_default, is_nullable, data_type, character_maximum_length,
+	//query := `SELECT column_name, column_default, is_nullable, data_type, character_maximum_length,
+	query := `SELECT column_name, column_default, is_nullable, data_type, udt_name, character_maximum_length,
 	CASE WHEN p.contype = 'p' THEN true ELSE false END AS primarykey,
 	CASE WHEN p.contype = 'u' THEN true ELSE false END AS uniquekey
 FROM pg_attribute f
@@ -169,10 +170,10 @@ WHERE c.relkind = 'r'::char AND c.relname = $1 AND f.attnum > 0 ORDER BY f.attnu
 	cols := make([]column, 0)
 	for rows.Next() {
 		col := column{}
-		var colName, isNullable, dataType string
+		var colName, isNullable, dataType, udtName string
 		var maxLenStr, colDefault *string
 		var isPK, isUnique bool
-		err = rows.Scan(&colName, &colDefault, &isNullable, &dataType, &maxLenStr, &isPK, &isUnique)
+		err = rows.Scan(&colName, &colDefault, &isNullable, &dataType, &udtName, &maxLenStr, &isPK, &isUnique)
 		if err != nil {
 			return nil, err
 		}
@@ -196,7 +197,12 @@ WHERE c.relkind = 'r'::char AND c.relname = $1 AND f.attnum > 0 ORDER BY f.attnu
 			col.IsAutoIncrement = true
 		}
 		col.Nullable = (isNullable == "YES")
-		col.dataType = dataType
+//fmt.Println(dataType)
+		if dataType == "USER-DEFINED" {
+			col.dataType = udtName
+		} else {
+			col.dataType = dataType
+		}
 		col.Length = maxLen
 
 		cols = append(cols, col)
